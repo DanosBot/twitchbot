@@ -71,12 +71,10 @@ client.on('message', (channel, tags, message, messageUUID, self) => {
         })
             // write chat message containing new imgur url
             .then((response) => {
-                console.log(response);
                 client.say(channel, `@${tags.username}, Uploaded your image ${response.data.data.link} don't use gyazo.`);
             })
             // write chat message with sharex url
-            .catch((error) => {
-                console.log(error);
+            .catch(() => {
                 client.say(channel, `@${tags.username}, use https://getsharex.com/ instead!`);
             });
     }
