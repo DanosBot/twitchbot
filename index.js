@@ -10,7 +10,7 @@ app.listen(port, () => {
 });
 
 const client = new tmi.Client({
-	options: { debug: process.env.hasDebugMode },
+	options: { debug: false },
 	connection: {
 		reconnect: true,
 		secure: true
@@ -34,48 +34,53 @@ const gyazoRegex = RegExp('(http(s)?(\:\/\/))?(i.)?gyazo\.com\/[a-zA-Z0-9]+\.[a-
 client.on('message', (channel, tags, message, messageUUID, self) => {
     if (self || tags.username === 'danosbot') return;
 	if (message.toLowerCase().includes('gyazo.com')) {
-        let gyazoLink = message.match(gyazoRegex);
+        // check if regex match is a gyazo image format or just a reference to the site
+        if (message.match(gyazoRegex) !== null) {
+            let gyazoLink = message.match(gyazoRegex);
 
-        // some over complicated logic to account for links that are missing elements of the url 
-        // but still resolve to a correct gyazo image
-        let indexPosition = 0;
-        if (gyazoLink.includes('https://')) {
-            indexPosition += 8;
-        } else if (gyazoLink.includes('http://')) {
-            indexPosition += 7;
-        }
-        if (gyazoLink.includes('i.')) {
-            indexPosition += 2;
-        }
-        // account for 'gyazo.com/'
-        indexPosition += 10;
+            // some over complicated logic to account for links that are missing elements of the url 
+            // but still resolve to a correct gyazo image
+            let indexPosition = 0;
+            if (gyazoLink.includes('https://')) {
+                indexPosition += 8;
+            } else if (gyazoLink.includes('http://')) {
+                indexPosition += 7;
+            }
+            if (gyazoLink.includes('i.')) {
+                indexPosition += 2;
+            }
+            // account for 'gyazo.com/'
+            indexPosition += 10;
 
-        gyazoLink = gyazoLink[0].toLowerCase().slice(indexPosition);
+            gyazoLink = gyazoLink[0].toLowerCase().slice(indexPosition);
 
-        if (gyazoLink.includes('.png')) {
-                gyazoLink = `https://i.gyazo.com/${gyazoLink}`
-        } else {
-            gyazoLink = `https://i.gyazo.com/${gyazoLink}.png`
-        }
+            if (gyazoLink.includes('.png')) {
+                    gyazoLink = `https://i.gyazo.com/${gyazoLink}`
+            } else {
+                gyazoLink = `https://i.gyazo.com/${gyazoLink}.png`
+            }
 
-        if (timeoutGyazoLinks && tags.mod === false) {
-            // time out gyazo message
-            client.deletemessage(channel, tags.id);
-        }
+            if (timeoutGyazoLinks && tags.mod === false && tags['badges-raw'] !== 'broadcaster/1') {
+                // time out gyazo message if user isn't the broadcaster or a mod
+                client.deletemessage(channel, tags.id);
+            }
 
-        // upload image to imgur
-        axios.post('https://api.imgur.com/3/upload', {
-                image: gyazoLink,
-        }, {
-            headers: { Authorization: `Bearer ${process.env.imgurAccessToken}` }
-        })
-            // write chat message containing new imgur url
-            .then((response) => {
-                client.say(channel, `@${tags.username}, Uploaded your image ${response.data.data.link} don't use gyazo.`);
+            // upload image to imgur
+            axios.post('https://api.imgur.com/3/upload', {
+                    image: gyazoLink,
+            }, {
+                headers: { Authorization: `Bearer ${process.env.imgurAccessToken}` }
             })
-            // write chat message with sharex url
-            .catch(() => {
-                client.say(channel, `@${tags.username}, use https://getsharex.com/ instead!`);
-            });
+                // write chat message containing new imgur url
+                .then((response) => {
+                    client.say(channel, `@${tags.username}, Uploaded your image ${response.data.data.link} don't use gyazo, use getsharex.com/ instead.`);
+                })
+                // write chat message with sharex download url
+                .catch(() => {
+                    client.say(channel, `@${tags.username}, use getsharex.com/ instead of gyazo!`);
+                });
+        } else {
+            client.say(channel, `@${tags.username}, use getsharex.com/ instead of gyazo!`);
+        }
     }
 });
