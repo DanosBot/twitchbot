@@ -81,14 +81,14 @@ client.on('message', (channel, tags, message, messageUUID, self) => {
             })
                 // write chat message containing new imgur url
                 .then((response) => {
-                    client.say(channel, `@${tags.username}, Uploaded your image ${response.data.data.link} don't use gyazo, use getsharex.com/ instead.`);
+                    client.say(channel, `@${tags.username}, Uploaded your image ${response.data.data.link} don't use gyazo.`);
                 })
                 // write chat message with sharex download url
                 .catch(() => {
-                    client.say(channel, `@${tags.username}, use getsharex.com/ instead of gyazo!`);
+                    client.say(channel, `@${tags.username}, use sharex instead of gyazo!`);
                 });
         } else {
-            client.say(channel, `@${tags.username}, use getsharex.com/ instead of gyazo!`);
+            client.say(channel, `@${tags.username}, use sharex instead of gyazo!`);
         }
     }
 });
