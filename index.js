@@ -67,7 +67,7 @@ client.on('message', (channel, tags, message, messageUUID, self) => {
                 // time out gyazo message if user isn't the broadcaster or a mod
                 client.deletemessage(channel, tags.id)
                     .then((data) => {
-                        console.log(`gyazo link removed from user "${tags.username}"`);
+                        console.log(`gyazo link removed from user "${tags.username}" in ${channel}`);
                     }).catch((err) => {
                         console.log(`Could not remove gyazo link. Not a mod in ${channel}`);
                     });
@@ -81,10 +81,12 @@ client.on('message', (channel, tags, message, messageUUID, self) => {
             })
                 // write chat message containing new imgur url
                 .then((response) => {
+                    console.log(`imgur upload successful for ${channel}`);
                     client.say(channel, `@${tags.username}, Uploaded your image ${response.data.data.link} don't use gyazo, use getsharex.com/ instead.`);
                 })
                 // write chat message with sharex download url
-                .catch(() => {
+                .catch((err) => {
+                    console.log(`imgur upload failed for ${channel}`, err);
                     client.say(channel, `@${tags.username}, use getsharex.com/ instead of gyazo!`);
                 });
         } else {
