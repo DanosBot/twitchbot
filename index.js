@@ -35,6 +35,7 @@ const gyazoRegex = RegExp('(http(s)?(\:\/\/))?(i.)?gyazo\.com\/[a-zA-Z0-9]+\.[a-
  * Watch chat messages for gyazo links and the upload to imgur instead
  */
 client.on('message', (channel, tags, message, messageUUID, self) => {
+    
     if (self || tags.username.toLowerCase() === process.env.username) return;
 	if (message.toLowerCase().includes('gyazo.com')) {
         // check if regex match is a gyazo image format or just a reference to the site
@@ -63,15 +64,22 @@ client.on('message', (channel, tags, message, messageUUID, self) => {
                 gyazoLink = `https://i.gyazo.com/${gyazoLink}.png`
             }
 
-            if (timeoutGyazoLinks && tags.mod === false && tags['badges-raw'] !== 'broadcaster/1') {
-                // time out gyazo message if user isn't the broadcaster or a mod
-                client.deletemessage(channel, tags.id)
-                    .then((data) => {
-                        console.log(`gyazo link removed from user "${tags.username}" in ${channel}`);
-                    }).catch((err) => {
-                        console.log(`Could not remove gyazo link. Not a mod in ${channel}`);
-                    });
-            }
+            // check if bot username is in list of channel mods
+            client.mods(channel)
+                .then((data) => {
+                    console.log(data);
+                    // time out gyazo message if user isn't the broadcaster or a mod AND the bot is a mod
+                    if (timeoutGyazoLinks && tags.mod === false && tags['badges-raw'] !== 'broadcaster/1' && data.includes(process.env.username.toLowerCase())) {
+                        client.deletemessage(channel, tags.id)
+                            .then(() => {
+                                console.log(`gyazo link removed from user "${tags.username}" in ${channel}`);
+                            }).catch((err) => {
+                                console.log(`Could not remove gyazo link in ${channel}`, err);
+                            });
+                    }
+                }).catch(() => {
+                    console.log(`Could not remove gyazo link. Not a mod in ${channel}`);
+                });
 
             // upload image to imgur
             axios.post('https://api.imgur.com/3/upload', {
@@ -81,12 +89,12 @@ client.on('message', (channel, tags, message, messageUUID, self) => {
             })
                 // write chat message containing new imgur url
                 .then((response) => {
-                    console.log(`imgur upload successful for ${channel}`);
+                    console.log(`imgur upload successful in ${channel}`);
                     client.say(channel, `@${tags.username}, Uploaded your image ${response.data.data.link} don't use gyazo, use getsharex.com/ instead.`);
                 })
                 // write chat message with sharex download url
                 .catch((err) => {
-                    console.log(`imgur upload failed for ${channel}`, err);
+                    console.log(`imgur upload failed in ${channel}`, err);
                     client.say(channel, `@${tags.username}, use getsharex.com/ instead of gyazo!`);
                 });
         } else {
