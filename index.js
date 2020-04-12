@@ -102,7 +102,7 @@ client.on('message', (channel, tags, message, messageUUID, self) => {
                 })
                 // write chat message to use sharex
                 .catch((err) => {
-                    console.log(`imgur upload failed in ${channel}`, err);
+                    console.log(`imgur upload failed in ${channel}. Code: ${err.response.status}, status text: ${err.response.statusText}`);
                     if (botHasMod) {
                         client.say(channel, `@${tags.username}, use getsharex.com/ instead of gyazo!`);
                     } else {
